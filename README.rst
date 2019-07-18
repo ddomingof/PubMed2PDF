@@ -2,8 +2,7 @@ PubMed2PDF
 ==========
 
 A Python package to download PDFs from OA publications in PubMed. The underlying code is forked from
-https://github.com/billgreenwald/Pubmed-Batch-Download. Downloaded files are located  by default in your personal folder
- under the 'pubmed2pdf' directory.
+https://github.com/billgreenwald/Pubmed-Batch-Download. Downloaded files are located  by default in your personal folder under the 'pubmed2pdf' directory.
 
 
 Installation
