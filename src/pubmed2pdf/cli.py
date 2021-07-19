@@ -2,13 +2,12 @@
 
 """Command line interface."""
 
-import logging
-
 import click
 
-logger = logging.getLogger(__name__)
-from .constants import DEFAULT_ERROR_FILE, DATA_DIR
+from .constants import DEFAULT_ERROR_FILE, DATA_DIR, SUCCESSFULLY_DOWN_FILES
 from .utils import *
+
+logger = logging.getLogger(__name__)
 
 
 @click.group(help='pubmed2pdf')
@@ -24,8 +23,12 @@ def main():
               type=click.Path(exists=True), show_default=True)
 @click.option('--errors', help='Output file path for pmids which failed to fetch', default=DEFAULT_ERROR_FILE,
               type=click.Path(), show_default=True)
-@click.option('--exported', help='Output file path for pmids which failed to fetch', default=DEFAULT_ERROR_FILE,
-              type=click.Path(), show_default=True)
+@click.option(
+    '--exported',
+    help='Output file path for pmids which were succesfully downloaded', default=SUCCESSFULLY_DOWN_FILES,
+    type=click.Path(),
+    show_default=True,
+)
 @click.option('--maxtries', help='Max number of tries per article', default=3, type=int, show_default=True)
 @click.option('-v', '--verbose', help='Log everything', is_flag=True)
 def pdf(pmids, pmidsfile, out, errors, exported, maxtries, verbose):
@@ -69,12 +72,12 @@ def pdf(pmids, pmidsfile, out, errors, exported, maxtries, verbose):
 
     if pmids:
         # Split by comma the pubmeds
-        pmids = pmids.split(",")
+        pmids = [i.strip() for i in pmids.split(",")]
         names = pmids
     else:
         # Read file and get the pubmeds
         pmids = [
-            line.strip().split()
+            line.strip().split().strip()
             for line in open(pmidsfile)
         ]
         # Get names if there are two columns

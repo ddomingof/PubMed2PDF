@@ -17,46 +17,58 @@ def getMainUrl(url):
     return "/".join(url.split("/")[:3])
 
 
-def savePdfFromUrl(pdfUrl, output_dir, name, headers):
-    t = requests.get(pdfUrl, headers=headers, allow_redirects=True)
-    with open('{0}/{1}.pdf'.format(output_dir, name), 'wb') as f:
-        f.write(t.content)
+def save_pdf_from_url(pdf_url: str, output_dir: str, name: str, headers: str) -> None:
+    """Save file as a pdf."""
+    print(pdf_url)
+    response = requests.get(pdf_url, headers=headers, allow_redirects=True)
+
+    # likely to be a pdf
+    if response.apparent_encoding is None:
+        with open('{0}/{1}.pdf'.format(output_dir, name), 'wb') as f:
+            f.write(response.content)
+    else:
+        with open('{0}/{1}.html'.format(output_dir, name), 'wb') as f:
+            f.write(response.content)
 
 
 def fetch(pmid, finders, name, headers, errorPmids, output_dir):
+    """Download a pdf from a pmid."""
+    if os.path.exists("{0}/{1}.pdf".format(output_dir, pmid)):  # bypass finders if pdf reprint already stored locally
+        logger.debug("** Reprint #{0} already downloaded and in folder; skipping.".format(pmid))
+        return
+
     uri = "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id={0}&retmode=ref&cmd=prlinks".format(
         pmid
     )
     success = False
     dontTry = False
-    if os.path.exists("{0}/{1}.pdf".format(output_dir, pmid)):  # bypass finders if pdf reprint already stored locally
-        logger.debug("** Reprint #{0} already downloaded and in folder; skipping.".format(pmid))
-        return
-    else:
-        # first, download the html from the page that is on the other side of the pubmed API
-        req = requests.get(uri, headers=headers)
-        if 'ovid' in req.url:
-            logger.debug(
-                " ** Reprint {0} cannot be fetched as ovid is not supported by the requests package.".format(pmid))
-            errorPmids.write("{}\t{}\n".format(pmid, name))
-            dontTry = True
-            success = True
-        soup = BeautifulSoup(req.content, 'lxml')
-        #         return soup
-        # loop through all finders until it finds one that return the pdf reprint
-        if not dontTry:
-            for finder in finders:
-                logger.debug("Trying {0}".format(finder))
-                pdfUrl = eval(finder)(req, soup, headers)
-                if type(pdfUrl) != type(None):
-                    savePdfFromUrl(pdfUrl, output_dir, name, headers)
-                    success = True
-                    logger.debug("** fetching of reprint {0} succeeded".format(pmid))
-                    break
 
-        if not success:
-            logger.debug("** Reprint {0} could not be fetched with the current finders.".format(pmid))
-            errorPmids.write("{}\t{}\n".format(pmid, name))
+    # first, download the html from the page that is on the other side of the pubmed API
+    req = requests.get(uri, headers=headers)
+    if 'ovid' in req.url:
+        logger.debug(
+            "** Reprint {0} cannot be fetched as ovid is not supported by the requests package.".format(pmid)
+        )
+        errorPmids.write("{}\t{}\n".format(pmid, name))
+        dontTry = True
+        success = True
+
+    soup = BeautifulSoup(req.content, 'lxml')
+    #         return soup
+    # loop through all finders until it finds one that return the pdf reprint
+    if not dontTry:
+        for finder in finders:
+            logger.debug("Trying {0}".format(finder))
+            pdf_url = eval(finder)(req, soup, headers)
+            if type(pdf_url) != type(None):
+                save_pdf_from_url(pdf_url.strip(), output_dir, name, headers)
+                success = True
+                logger.debug("** fetching of reprint {0} succeeded".format(pmid))
+                break
+
+    if not success:
+        logger.debug("** Reprint {0} could not be fetched with the current finders.".format(pmid))
+        errorPmids.write("{}\t{}\n".format(pmid, name))
 
 
 def acsPublications(req, soup, headers):
@@ -64,8 +76,8 @@ def acsPublications(req, soup, headers):
         x
         for x in soup.find_all('a')
         if type(x.get('title')) == str and (
-                'high-res pdf' in x.get('title').lower()
-                or 'low-res pdf' in x.get('title').lower())
+            'high-res pdf' in x.get('title').lower()
+            or 'low-res pdf' in x.get('title').lower())
     ]
 
     if len(possibleLinks) > 0:
