@@ -19,7 +19,6 @@ def getMainUrl(url):
 
 def save_pdf_from_url(pdf_url: str, output_dir: str, name: str, headers: str) -> None:
     """Save file as a pdf."""
-    print(pdf_url)
     response = requests.get(pdf_url, headers=headers, allow_redirects=True)
 
     # likely to be a pdf
