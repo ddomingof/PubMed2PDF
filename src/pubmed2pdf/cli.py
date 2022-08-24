@@ -77,7 +77,7 @@ def pdf(pmids, pmidsfile, out, errors, exported, maxtries, verbose):
     else:
         # Read file and get the pubmeds
         pmids = [
-            line.strip().split().strip()
+            line.strip().split()
             for line in open(pmidsfile)
         ]
         # Get names if there are two columns
