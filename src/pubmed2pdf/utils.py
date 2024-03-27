@@ -10,6 +10,8 @@ import urllib
 import requests
 from bs4 import BeautifulSoup
 
+from Bio import Entrez
+
 logger = logging.getLogger(__name__)
 
 
@@ -68,6 +70,13 @@ def fetch(pmid, finders, name, headers, errorPmids, output_dir):
     if not success:
         logger.debug("** Reprint {0} could not be fetched with the current finders.".format(pmid))
         errorPmids.write("{}\t{}\n".format(pmid, name))
+
+
+def search_pubmed(query):
+    handle = Entrez.esearch(db="pubmed", term=query, retmax=100)
+    record = Entrez.read(handle)
+    handle.close()
+    return record["IdList"]
 
 
 def acsPublications(req, soup, headers):

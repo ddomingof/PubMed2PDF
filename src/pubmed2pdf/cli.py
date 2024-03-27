@@ -31,7 +31,8 @@ def main():
 )
 @click.option('--maxtries', help='Max number of tries per article', default=3, type=int, show_default=True)
 @click.option('-v', '--verbose', help='Log everything', is_flag=True)
-def pdf(pmids, pmidsfile, out, errors, exported, maxtries, verbose):
+@click.option('--search', help='Search terms for use in PubMed', type=str)
+def pdf(pmids, pmidsfile, out, errors, exported, maxtries, verbose, search):
     """Get PDFs from PubMed idenfiers."""
 
     if verbose:
@@ -41,8 +42,8 @@ def pdf(pmids, pmidsfile, out, errors, exported, maxtries, verbose):
         logger.setLevel(logging.INFO)
 
     # Checking arguments
-    if not pmids and not pmidsfile:
-        click.echo("Error: One of the two arguments '--pmids' or '--pmidsfile' must be used. Exiting...")
+    if not pmids and not pmidsfile and not search:
+        click.echo("Error: One of the arguments '--pmids' or '--pmidsfile' or '--search' must be used. Exiting...")
         exit(1)
     if pmids and pmidsfile:
         click.echo("Error: --pmids and --pmidsfile cannot be used together. Please select only one. Exiting...")
@@ -70,9 +71,16 @@ def pdf(pmids, pmidsfile, out, errors, exported, maxtries, verbose):
                             'Chrome/56.0.2924.87 ' \
                             'Safari/537.36'
 
+
     if pmids:
         # Split by comma the pubmeds
         pmids = [i.strip() for i in pmids.split(",")]
+        names = pmids
+    elif search:
+    	# Get list of  pubmeds from search
+        pmids = search_pubmed(search)
+        print(pmids)
+        #pmids = [i.strip() for i in pmids.split(",")]
         names = pmids
     else:
         # Read file and get the pubmeds
