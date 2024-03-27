@@ -10,6 +10,8 @@ import urllib
 import requests
 from bs4 import BeautifulSoup
 
+from Bio import Entrez
+
 logger = logging.getLogger(__name__)
 
 
@@ -69,6 +71,21 @@ def fetch(pmid, finders, name, headers, errorPmids, output_dir):
         logger.debug("** Reprint {0} could not be fetched with the current finders.".format(pmid))
         errorPmids.write("{}\t{}\n".format(pmid, name))
 
+# def search_pubmed(query):
+#     search_url = f"https://pubmed.ncbi.nlm.nih.gov/?term={query}"
+#     response = requests.get(search_url)
+#     if response.status_code == 200:
+#         pmids = re.findall(r'data-pmid="(\d+)"', response.text)
+#         return pmids
+#     else:
+#         logger.error(f"Failed to search PubMed for query: {query}")
+#         return []
+
+def search_pubmed(query):
+    handle = Entrez.esearch(db="pubmed", term=query, retmax=100)
+    record = Entrez.read(handle)
+    handle.close()
+    return record["IdList"]
 
 def acsPublications(req, soup, headers):
     possibleLinks = [
